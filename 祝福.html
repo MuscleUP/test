@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>怡宝的生日祝福</title>
+    <style>
+        /* 背景与装饰 */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: "微软雅黑", sans-serif;
+            /* 柔和的生日渐变底色 */
+            background: linear-gradient(135deg, #fff7f2 0%, #fffef6 50%, #f2f9ff 100%);
+            position: relative;
+        }
+
+        /* 背景装饰容器（气球、彩带在此） */
+        .bg-decor {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1; /* 背景层 */
+            overflow: hidden;
+        }
+
+        /* 气球样式 */
+        .balloon {
+            position: absolute;
+            width: 80px;
+            height: 110px;
+            border-radius: 50% 50% 45% 45%;
+            transform-origin: center bottom;
+            opacity: 0.95;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08), inset -6px -8px 18px rgba(255,255,255,0.2);
+            animation: floatUp var(--dur) ease-in-out infinite;
+        }
+        .balloon::after { /* 气球线 */
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            width: 2px;
+            height: 60px;
+            background: rgba(0,0,0,0.08);
+            transform: translateX(-50%);
+            border-radius: 1px;
+            filter: blur(0.2px);
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(10vh) scale(0.98) rotate(-6deg); }
+            50%  { transform: translateY(-8vh) scale(1.02) rotate(6deg); }
+            100% { transform: translateY(10vh) scale(0.98) rotate(-6deg); }
+        }
+
+        /* 彩带 / confetti */
+        .confetti {
+            position: absolute;
+            width: var(--size);
+            height: var(--size);
+            border-radius: 2px;
+            background: var(--color);
+            opacity: 0.95;
+            transform: translateY(-20vh) rotate(var(--rot));
+            animation: fall var(--fall-dur) linear var(--delay) forwards;
+            z-index: 1;
+        }
+        @keyframes fall {
+            to {
+                transform: translateY(120vh) rotate(calc(var(--rot) + 720deg));
+                opacity: 1;
+            }
+        }
+
+        /* 弹窗前景样式 */
+        .popup {
+            position: absolute;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+            font-family: "微软雅黑", sans-serif;
+            font-weight: bold;
+            text-align: center;
+            animation: fade 3.5s forwards;
+            z-index: 3; /* 高于背景装饰 */
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(4px);
+        }
+        @keyframes fade {
+            0% { opacity: 0; transform: scale(0.85); }
+            20% { opacity: 1; transform: scale(1); }
+            80% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.85); }
+        }
+
+        #startBtn {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #FF5252;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(255,82,82,0.22);
+            z-index: 4; /* 最上层，方便点击 */
+        }
+        #endMsg {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 25px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            font-family: "微软雅黑", sans-serif;
+            text-align: center;
+            z-index: 4;
+        }
+
+        /* 响应式微调 */
+        @media (max-width: 480px) {
+            .balloon { width: 60px; height: 86px; }
+            .popup { padding: 14px; font-size: 13px; width: 200px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景装饰容器（气球、彩带） -->
+    <div class="bg-decor" id="bgDecor"></div>
+
+    <!-- 开始按钮 -->
+    <button id="startBtn">点击开启给怡宝的生日祝福～</button>
+
+    <!-- 结束提示 -->
+    <div id="endMsg">
+        <h3>所有祝福已送达～</h3>
+        <p>愿怡宝生日快乐，新的一岁平安喜乐！</p>
+    </div>
+
+    <script>
+        // 祝福文案（和之前的保持一致）
+        const texts = [
+            "怡宝生日快乐呀！🎂 今天要吃甜甜的蛋糕哦～",
+            "愿怡宝每天都像拆礼物一样开心！😊",
+            "新的一岁，怡宝要继续闪闪发光呀！✨",
+            "Happy Birthday to 怡宝！🎉 好运永远围绕你～",
+            "怡宝暴富！暴美！最重要的是天天都顺心～",
+            "今天的怡宝是宇宙限量版可爱！🌟 生日快乐！",
+            "怡宝的新一岁，一定要比去年更幸福呀～",
+            "祝怡宝：蛋糕管够，快乐不限量！🎂",
+            "愿怡宝的每个愿望都能实现～",
+            "今天全宇宙都在祝怡宝生日快乐呀！🥳",
+            "怡宝又长大一岁啦～ 要继续做自己喜欢的事呀！",
+            "新的365天，愿怡宝被温柔和好运填满～",
+            "生日快乐怡宝！今天你说什么都对～ 😉",
+            "怡宝的生日，必须是甜度超标的一天！🍭",
+            "愿怡宝的生活永远像彩虹一样绚烂～ 生日快乐！"
+        ];
+
+        // 颜色列表
+        const colors = ["#FF5252", "#4CAF50", "#2196F3", "#FFC107", "#E91E63", "#9C27B0"];
+
+        // 在页面加载时创建背景装饰（气球 + 彩带）
+        const bgDecor = document.getElementById('bgDecor');
+
+        // 创建若干气球
+        function createBalloons(count = 8) {
+            for (let i = 0; i < count; i++) {
+                const b = document.createElement('div');
+                b.className = 'balloon';
+                const color = colors[i % colors.length];
+                b.style.background = `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.7), rgba(255,255,255,0.15) 18%), ${color}`;
+                // 随机初始位置与动画周期
+                b.style.left = (Math.random() * 90) + 'vw';
+                b.style.top = (60 + Math.random() * 30) + 'vh';
+                b.style.setProperty('--dur', (8 + Math.random() * 6) + 's');
+                b.style.transform = `translateY(${Math.random() * 10}vh)`;
+                bgDecor.appendChild(b);
+            }
+        }
+
+        // 创建彩带 / confetti 下落
+        function createConfetti(count = 80) {
+            const confettiColors = ['#FFD166','#06D6A0','#EF476F','#118AB2','#FFD54F','#B388FF'];
+            for (let i = 0; i < count; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                const size = (6 + Math.random() * 10).toFixed(1) + 'px';
+                c.style.setProperty('--size', size);
+                c.style.setProperty('--color', confettiColors[Math.floor(Math.random() * confettiColors.length)]);
+                c.style.left = (Math.random() * 100) + 'vw';
+                c.style.top = (-10 - Math.random() * 30) + 'vh';
+                c.style.setProperty('--rot', (Math.random() * 360) + 'deg');
+                c.style.setProperty('--fall-dur', (3 + Math.random() * 5) + 's');
+                c.style.setProperty('--delay', (Math.random() * 2) + 's');
+                bgDecor.appendChild(c);
+            }
+        }
+
+        // 初始化背景装饰
+        createBalloons(9);
+        createConfetti(90);
+
+        // 开始按钮点击事件
+        document.getElementById("startBtn").addEventListener("click", () => {
+            document.getElementById("startBtn").style.display = "none";
+
+            // 生成50个随机弹窗
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    createPopup();
+                }, i * 100); // 每个弹窗间隔0.1秒
+            }
+
+            // 所有弹窗结束后显示最终祝福
+            setTimeout(() => {
+                document.getElementById("endMsg").style.display = "block";
+            }, 50 * 100 + 3500);
+        });
+
+        // 创建单个祝福弹窗
+        function createPopup() {
+            const popup = document.createElement("div");
+            popup.className = "popup";
+
+            // 随机内容和样式
+            popup.innerText = texts[Math.floor(Math.random() * texts.length)];
+            popup.style.color = colors[Math.floor(Math.random() * colors.length)];
+            popup.style.fontSize = (14 + Math.random() * 4) + "px"; // 随机字体大小
+            popup.style.width = (180 + Math.random() * 100) + "px"; // 随机宽度
+            popup.style.height = "auto"; // 高度自适应内容（避免显示不全）
+
+            // 随机位置（确保在屏幕内）
+            const maxLeft = Math.max(20, window.innerWidth - parseInt(popup.style.width) - 40);
+            const maxTop = Math.max(120, window.innerHeight - 120);
+            popup.style.left = (20 + Math.random() * (maxLeft - 20)) + "px";
+            popup.style.top = (20 + Math.random() * (maxTop - 20)) + "px";
+
+            document.body.appendChild(popup);
+
+            // 弹窗消失后移除元素
+            setTimeout(() => {
+                popup.remove();
+            }, 3500);
+        }
+
+        // 当窗口大小改变时，重新创建部分背景装饰以保持布局美观（轻量处理）
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                // 移除旧的背景装饰并重建（避免重复累积）
+                bgDecor.innerHTML = '';
+                createBalloons(9);
+                createConfetti(90);
+            }, 300);
+        });
+    </script>
+</body>
+</html>
